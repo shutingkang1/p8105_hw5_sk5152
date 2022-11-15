@@ -1,0 +1,86 @@
+---
+title: "p8105_hw5_sk5152"
+author: "Shuting Kang"
+date: "2022-11-15"
+output: github_document
+---
+## Problem 2
+
+The homicide datasets in 50 large U.S. cities from Washington Post are loaded in this project. 
+```{r}
+#for loop (map are better actually)
+library(tidyverse)
+homicide<-read_csv("./data/homicide-data.csv")
+head(homicide)
+skimr::skim(homicide)
+```
+```{r}
+homicide_CityState<- homicide%>%
+  mutate(city_state=str_c(city,state,sep=","))
+head(homicide_CityState)
+
+```
+The homicides dataset contained `r nrow(homicide)` observation and `r ncol(homicide)` variables
+```{r}
+summary<-homicide_CityState%>%
+  group_by(city_state)%>%
+  summarize(
+    total_cases=n(),
+    solved=sum(disposition=="Closed by arrest"),
+    unsolved=sum(disposition!="Closed by arrest")
+  )
+summary
+```
+For the city of Baltimore, MD, prop.test function was utilized to estimate the proportion of homicides that are unsolved. broom::tidy was applied to save the output of prop.test as an R object.
+```{r}
+baltimore<-
+  summary%>%
+  filter(city_state=="Baltimore,MD")
+baltimore
+  
+  
+```
+```{r}
+baltimore = homicide_CityState %>% 
+  filter(city_state == "Baltimore, MD")
+baltimore_summary = 
+  baltimore %>% 
+  summarize(
+    unsolved = sum(resolution == "unsolved"),
+    n = n()
+  )
+baltimore_test = prop.test(
+  x = baltimore_summary %>% pull(unsolved), 
+  n = baltimore_summary %>% pull(n)) 
+baltimore_test %>% 
+  broom::tidy()
+```
+
+```{r}
+## problem 3 simulation (lecture  code)
+library(tidyverse)
+sim_t_test=function(true_mean){
+  sample=rnorm(30,mean=0)
+test_results=t.test(sample)
+test_result%>%
+  broom::tidy()
+}
+
+expand_grid(
+  true_mean=0:6,
+  iter=1:5
+)
+
+
+
+sim_results_df = 
+  expand_grid(
+    sample_size = 30,
+    iter = 1:100
+  ) %>% 
+  mutate(
+    estimate_df = map(sample_size, sim_mean_sd)
+  ) %>% 
+  unnest(estimate_df)
+```
+
