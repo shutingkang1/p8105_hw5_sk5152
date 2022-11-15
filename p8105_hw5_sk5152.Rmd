@@ -31,29 +31,24 @@ summary<-homicide_CityState%>%
   )
 summary
 ```
-For the city of Baltimore, MD, prop.test function was utilized to estimate the proportion of homicides that are unsolved. broom::tidy was applied to save the output of prop.test as an R object.
+For the city of Baltimore, MD, prop.test function was utilized to estimate the proportion of homicides that are unsolved. broom::tidy was applied to save the output of prop.test as an R object. The test method is 1-sample proportions test with continuity correction, the estimated proportion is 0.6455607, and the 95% confidence interval is (0.6275625,0.6631599)
 ```{r}
 baltimore<-
-  summary%>%
-  filter(city_state=="Baltimore,MD")
-baltimore
-  
-  
-```
-```{r}
-baltimore = homicide_CityState %>% 
-  filter(city_state == "Baltimore, MD")
-baltimore_summary = 
-  baltimore %>% 
+  homicide_CityState%>%
+  filter(city_state=="Baltimore,MD")%>%
   summarize(
-    unsolved = sum(resolution == "unsolved"),
-    n = n()
+    unsolved=sum(disposition!="Closed by arrest"),
+    total_cases=n()
   )
-baltimore_test = prop.test(
-  x = baltimore_summary %>% pull(unsolved), 
-  n = baltimore_summary %>% pull(n)) 
-baltimore_test %>% 
+
+
+baltimore_test <-prop.test(x=baltimore%>%pull(unsolved),n=baltimore%>%pull(total_cases))%>%
   broom::tidy()
+baltimore_test
+```
+
+```{r}
+
 ```
 
 ```{r}
