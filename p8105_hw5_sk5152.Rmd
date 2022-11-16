@@ -20,7 +20,7 @@ homicide_CityState<- homicide%>%
 head(homicide_CityState)
 
 ```
-The homicides dataset contained `r nrow(homicide)` observation and `r ncol(homicide)` variables
+The homicides dataset contained `r nrow(homicide)` observation and `r ncol(homicide)` variables. I excluded Tulsa, AL, because Tulsa,AL only have one record, which is consider as outlier.
 ```{r}
 summary<-homicide_CityState%>%
   group_by(city_state)%>%
@@ -28,7 +28,8 @@ summary<-homicide_CityState%>%
     total_cases=n(),
     solved=sum(disposition=="Closed by arrest"),
     unsolved=sum(disposition!="Closed by arrest")
-  )
+  )%>%
+  filter(city_state!="Tulsa,AL")
 summary
 ```
 For the city of Baltimore, MD, prop.test function was utilized to estimate the proportion of homicides that are unsolved. broom::tidy was applied to save the output of prop.test as an R object. The test method is 1-sample proportions test with continuity correction, the estimated proportion is 0.6455607, and the 95% confidence interval is (0.6275625,0.6631599)
@@ -42,12 +43,35 @@ baltimore<-
   )
 
 
-baltimore_test <-prop.test(x=baltimore%>%pull(unsolved),n=baltimore%>%pull(total_cases))%>%
+baltimore_test <-prop.test(x=1825	,n=2827	)%>%
   broom::tidy()
 baltimore_test
 ```
 
 ```{r}
+result=
+  summary%>%
+  mutate(
+    result=map2(unsolved,total_cases,prop.test),
+    output_result=map(result, broom::tidy)
+  )%>%
+  unnest(output_result)%>%
+  select(city_state,estimate,conf.low,conf.high)
+
+result
+```
+I create a tidy dataframe with estimated proportions of CIs for each city based on the summary table, generated above, which contain city_state, the number of unsolved, solved, and total cases for each city. prop.test was utilized to analyze the estimated proportion unsolved cases and distinguish CI for each city. purrr::map and purrr::map2 were used to generate a tidy pipeline. finally, I use unnest function to pick the target variables, included estimated proportion, confidence interval boundary for each city. 
+```{r}
+city_plot = 
+result %>% 
+ggplot(aes(x=fct_reorder(city_state,estimate), y=estimate))+
+  geom_point()+
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high))+
+  labs(
+    title = "estimated proportion and CI of unsolved cases in each city",
+    x = "city state") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+city_plot
 
 ```
 
