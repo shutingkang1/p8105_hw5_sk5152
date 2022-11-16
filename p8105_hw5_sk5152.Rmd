@@ -74,32 +74,104 @@ ggplot(aes(x=fct_reorder(city_state,estimate), y=estimate))+
 city_plot
 
 ```
+This plot visualize the estimates and CIs for each city with error bar based on the upper and lower limits with ascending order. 
 
+
+## Problem 3
+
+First, I build a simulation t-test function for each input true_mean. 
+to obtain the estimate and p-value, broom::tidy was utilized to clean the output of t.test.
 ```{r}
-## problem 3 simulation (lecture  code)
 library(tidyverse)
 sim_t_test=function(true_mean){
-  sample=rnorm(30,mean=0)
-test_results=t.test(sample)
-test_result%>%
-  broom::tidy()
+  sample=rnorm(30,mean=true_mean,sd=5)
+test_results=t.test(sample,conf.level=0.95)
+test_results%>%
+  broom::tidy()%>%
+  select(estimate,p.value)
 }
-
-expand_grid(
-  true_mean=0:6,
-  iter=1:5
-)
-
-
+```
+set mean=0, generate 5000 datasets from the Normal distribution model with alpha=0.05
+```{r}
+sim_reuslt_df_0=
+  expand_grid(
+    true_mean=0,
+    iter=1:5000
+  )%>%
+  mutate(
+    estimate=map(true_mean,sim_t_test)
+  )%>%
+  unnest(estimate)
+head(sim_reuslt_df_0)
+```
+repeat the above for mean=1,2,3,4,5,6
+```{r}
 
 sim_results_df = 
   expand_grid(
-    sample_size = 30,
-    iter = 1:100
+    true_mean=1:6,
+    iteration=1:5000
   ) %>% 
   mutate(
-    estimate_df = map(sample_size, sim_mean_sd)
+    estimate_df = map(true_mean,sim_t_test)
   ) %>% 
   unnest(estimate_df)
+
+```
+
+
+```{r}
+
+summary = sim_results_df %>% 
+  group_by(true_mean)%>%
+  summarize(
+    total = n(),
+    reject = sum(p.value < 0.05)
+  ) %>% 
+  mutate(
+    power = reject / total
+  )
+summary
+```
+Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of μ on the x axis. Describe the association between effect size and power.
+```{r}
+summary%>%
+  ggplot(aes(x=true_mean,y=power))+
+  geom_point()+
+  geom_line()+
+  labs(title="power vs. true mean",
+       x="true mean",
+       y="power")
+```
+as the true mean increasing from 1 to 6, the power also increased from 0.2 to 1.0
+
+```{r}
+# average estimate of mean vs true mean
+plot2=
+  sim_results_df%>%
+  group_by(true_mean)%>%
+  mutate(estimated_mean=mean(estimate))%>%
+  ggplot(aes(x=true_mean,y=estimated_mean))+
+  geom_point()+
+  geom_line()+
+  labs(title="estimated mean vs. true mean",
+         x="true mean",
+         y="estimated mean")
+ plot2 
+```
+
+```{r}
+plot3=
+  sim_results_df%>%
+  filter(p.value<0.05)%>%
+  group_by(true_mean)%>%
+  mutate(estimated_mean=mean(estimate))%>%
+  ggplot(aes(x=true_mean,y=estimated_mean))+
+  geom_point()+
+  geom_line()+
+  labs(title="estimated mean vs. true mean(only in samples for which the null was rejected)",
+         x="true mean",
+         y="estimated mean")
+ plot3 
 ```
 
