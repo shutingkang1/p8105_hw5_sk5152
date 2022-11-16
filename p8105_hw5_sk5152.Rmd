@@ -119,7 +119,7 @@ sim_results_df =
 
 ```
 
-
+summary table was used to visualize and compare the power between each true mean. alpha is 0.05, so we consider the p.value lower tha 0.05 as reject to the null hypothesis. power is reject devided by the total.
 ```{r}
 
 summary = sim_results_df %>% 
@@ -143,7 +143,8 @@ summary%>%
        x="true mean",
        y="power")
 ```
-as the true mean increasing from 1 to 6, the power also increased from 0.2 to 1.0
+as the true mean increasing from 1 to 6, the power also increased from 0.2 to 1.0 
+for true mean between the 1 to 5, the power is increasing, and then, the power keep constant from true mean of 5 to the true mean of 6. 
 
 ```{r}
 # average estimate of mean vs true mean
@@ -159,7 +160,7 @@ plot2=
          y="estimated mean")
  plot2 
 ```
-
+this plot visualize the average estimate of mean and true mean. 
 ```{r}
 plot3=
   sim_results_df%>%
@@ -174,4 +175,5 @@ plot3=
          y="estimated mean")
  plot3 
 ```
+the average estimate of mean  only in samples for which the null was rejected on the y axis and the true value of mean on the x axis. the estimate mean of the samples for which the null was rejected was generally similiar as the expected estimated mean, especially for the larger true_mean. when the true mean is small, like 1,2,3, the estimated mean for rejected null hypothesis is lower than their estimated mean. 
 
